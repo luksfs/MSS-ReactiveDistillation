@@ -1,0 +1,28 @@
+# Byte-compiled files
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+env/
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+#GAMS files and folders
+.dat
+.gsp
+*.log~*
+*.log
+.lst
+.lxi
+.ref
+2*/
