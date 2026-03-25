@@ -1,17 +1,21 @@
-$title Rective ditillation - MSS analysis
+$title Rective ditillation - Exhaustive - CONOPT-BARON scaling ON - 3 reactive trays - could be separated
 
-$onText
-Just to show the application of our methodology in obtaining the best steady state solution
-$offText
 * ============================================================================ *
 * =================================== SETS =================================== *
 * ============================================================================ *
 SET
+    i "Number of components" /1*4/
+    j "Number of stages"  /1*18/
+    
+* New sets for loop indices - starting from 1 to match ordinal positions
+    ns_set "Number of stages set" /1*18/
+    nfe_set "Ethanol feed stage set" /1*18/
+    nfb_set "Butenes feed stage set" /1*18/
+    nr1_set "First reactive tray set" /1*18/
+    nr2_set "Second reactive tray set" /1*18/
+    nr3_set "Third reactive tray set" /1*18/
+;
 
- i "Number of components" /1*4/
- j "Number of stages"  /1*30/
- iter "Number of iteration" /1*315/ 
- ;
 
 
 * ============================================================================ *
@@ -19,68 +23,88 @@ SET
 * ============================================================================ *
   
 SCALAR
-  Nc "Total number of components" /4/
-  Ns "Total number of stages"
-  NR "First reactive tray"
-  NFE "Ethanol feed stage"
-  NFB "Butenes feed stage";
-  
+    Nc "Total number of components" /4/
+    Ns "Total number of stages"
+    NR "First reactive tray"
+    NFE "Ethanol feed stage"
+    NFB "Butenes feed stage"
+    NR1 "First reactive tray"
+    NR2 "Second reactive tray"
+    NR3 "Third reactive tray"
+    nsmin /6/
+    nsmax /15/
+    count_s /0/
+    count_f /0/
+;
 * ============================================================================ *
 * ============================= Solution Parameters ============================= *
 * ============================================================================ *
-ALIAS(j,jj,zz,xx,hh);
-
-
-PARAMETERS
-Z_cost(j,jj,zz,xx,hh)          "Compressibility factor for each solution"
-v_mol_cost(j,jj,zz,xx,hh)   "Molar volume for each solution (m3/mol)"
-Mw_cost(j,jj,zz,xx,hh)      "Molar weight for each soltution (kg/kmol)"
-Qr_cost(j,jj,zz,xx,hh)        "Condenser duty for each solution (J/min)"
-Qc_cost(j,jj,zz,xx,hh)        "Reboiler duty for each solution (J/min)"
-T_cost(j,jj,zz,xx,hh)          "Temp profile (K)"
-L_cost(j,jj,zz,xx,hh)          "Molar flowrate in liquid (mol/min)"
-V_cost(j,jj,zz,xx,hh)          "Molar flowrate (mol/min)"
-x_column(i,j,jj,zz,xx,hh)                "liquid molar frac"
-y_column(i,j,jj,zz,xx,hh)                "vapor molar frac"
-Tcond_cost(j,jj,zz,xx,hh)          "Temp condenser (K)"
-Treb_cost(j,jj,zz,xx,hh)          "Temp reboiler (K)"
-RR_array(j,jj,zz,xx,hh)        "Reflux Ratio"
-x_ETBE_array(j,jj,zz,xx,hh)  "ETBE molar fraction at bottom product"
-x_ETBE_D_array(j,jj,zz,xx,hh)  "ETBE molar fraction at top product"
-Bottom(j,jj,zz,xx,hh)             "Bottom product (mol/min)"
-Top(j,jj,zz,xx,hh)             "Top product (mol/min)"
-count_s                             "Successful candidates counter"
-count_f                             "Failed candidates counter"
-count_s_conopt                 "Successful candidates counter for conopt"
-Mw_mix_temp(j)
-Tcond_t
-profit_obj(j,jj,zz,xx,hh)
-profit_obj_conopt(j,jj,zz,xx,hh) 'objective function conopt'
-X_ETOH_copnopt(j,jj,zz,xx,hh) 'Ethanol conversion  conopt'
-x_ETBE_conopt(j,jj,zz,xx,hh)  "ETBE molar fraction at bottom product - conopt"
-Breb_cost(j,jj,zz,xx,hh)
-model_stat(j,jj,zz,xx,hh)
-model_stat_conopt(j,jj,zz,xx,hh)
-X_EtOH_array(j,jj,zz,xx,hh)
-D_colMax_arr(j,jj,zz,xx,hh)
-D_col_arr(j,jj,zz,xx,hh)
-results(iter)
-it
 ;
 
-it=0;
-count_s = 0;
-count_f = 0;
-count_s_conopt = 0;
+* Define result storage parameters with 5 dimensions instead of 7
+PARAMETERS
+*    Z_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    v_mol_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    Mw_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    T_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    V_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    L_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    D_col_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    x_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    y_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j)
+*    
+** Scalar results (one value per configuration)
+*    Qr_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    Qc_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    Treb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    Tcond_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    RR_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    x_ETBE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    x_ETBE_D_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    X_EtOH_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    profit_obj(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    Breb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    D_colMax_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+*    FE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set)
+    
+    Mw_mix_temp(j)
+    X_ETOH(j)
+    X_D_ETBE(j)
+    RR
+    Tcond_t
+;
+
+* Define valid combinations upfront
+*SET validCombo(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set);
+*
+*validCombo(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = YES$(
+*    ord(ns_set) >= nsmin AND
+*    ord(ns_set) <= nsmax AND
+*    ord(nfe_set) >= 2 AND
+*    ord(nfe_set) <= ord(ns_set) - 3 AND
+*    ord(nfb_set) >= ord(nfe_set) + 2 AND
+*    ord(nfb_set) <= ord(ns_set) - 1 AND
+*    ord(nr1_set) >= ord(nfe_set) AND
+*    ord(nr1_set) <= ord(nfb_set) - 2 AND
+*    ord(nr2_set) >= ord(nr1_set) + 1 AND
+*    ord(nr2_set) <= ord(nfb_set) - 1 AND
+*    ord(nr3_set) >= ord(nr2_set) + 1 AND
+*    ord(nr3_set) <= ord(nfb_set)
+*);
+
+* Display how many configurations will be solved
+*SCALAR total_configs;
+*total_configs = card(validCombo);
+*DISPLAY "Total configurations to solve:", total_configs;
 
 SCALAR R_cost "Gas constant J K-1 kmol-1" /8.314463e3/;
 SCALAR Elapsed_time;
 
-PARAMETER X_ETOH(j), x_D_ETBE(j), jmax, test_par(j);
+PARAMETER X_ETOH(j), x_D_ETBE(j), jmax;
 SCALAR RR;
 
 SCALAR
- Tmin /315/
+ Tmin /330/
  Tmax /410/
  jmin /1/;
 * jmax /10/;
@@ -161,7 +185,9 @@ POSITIVE VARIABLES
                    T(j)        "Temperature (K)"
                    D           "Destillate product flowrate (mol/min)"
                    Qc          "Condenser Duty (J/min)"
-                   Qr          "Reboiler Duty (J/min)";
+                   Qr          "Reboiler Duty (J/min)"
+*                   FE           "Ethanol molar flowrate"
+                   ;
 
 * ============================================================================ *
 * ================================= EQUATIONS ================================ *
@@ -227,29 +253,23 @@ Parameter T(j) /
 
 $offtext
 
-* --- scaling parameter for pressure
-Parameter P_scale 'Scaling factor to convert bar to Pa' /1e5/;
-
 EQUATION psat_def(i,j);
-set c   'Psat equation coefficients'   /j1*j7/
 *  Saturation Pressure expanded Antoine (Aspen data)
 POSITIVE VARIABLES logPsat(i,j) "Saturation Pressure (Pa)";
 
-Table kk(i,c) 'Coefficients for the saturation pressure equation'
-           j1         j2        j3       j4        j5       j6             j7
-    1     51.836   -4019.2      0        0      -4.5229    4.8833E-17      6
-    2     73.304   -7122.3      0        0      -7.1424    2.8853E-06      2
-    3     78.01    -4634.1      0        0      -8.9575    1.3413E-05      2
-    4     64.188   -5820.2      0        0      -6.1343    2.1405E-17      6;
+PARAMETER kk(i,*) "psat antoine parameters";
+TABLE kk(i,*)  
+        1      2          3     4      5        6          7
+1    51.836  -4019.2      0     0   -4.5229   4.8833E-17   6
+2    73.304  -7122.3      0     0   -7.1424   2.8853E-06   2
+3    78.01   -4634.1      0     0   -8.9575   1.3413E-05   2
+4    64.188  -5820.2      0     0   -6.1343   2.1405E-17   6;
 
-*$macro psat_1 kk(i,'coeff1') + kk(i,'coeff2')/(kk(i,'coeff3') + T(j))
-*$macro psat_2 kk(i,'coeff5')*log(T(j))
-*$macro psat_3 kk(i,'coeff6')*(T(j)**kk(i,'coeff7'))
-*
 psat_def(i,j)$(ord(j) <= Ns) ..
-     logPsat(i,j) =E= ( kk(i,'j1') + kk(i,'j2')/(kk(i,'j3') + T(j))
-               + kk(i,'j4')*T(j) + kk(i,'j5')*log(T(j))
-               + kk(i,'j6')*T(j)**kk(i,'j7') );
+    logPsat(i,j) =E= (
+         kk(i,'1') + kk(i,'2')/(kk(i,'3') + T(j)) 
+         + kk(i,'4')*T(j) + kk(i,"5")*LOG(T(j)) 
+         + kk(i,'6')*(T(j)**kk(i,'7')));
  
 * ============================================================================ *
 * Soave Redlich Kwong for Mixtures (phi_mix,HR_mix)
@@ -577,31 +597,30 @@ $macro Xg(i,j) ( x(i,j)*gamma_nrtl(i,j) )
     
 * Reaction equilibrium constant
 EQUATION calc_K_eq(j);
-calc_K_eq(j)$((ord(j) >= NR) AND (ord(j) <= NR+2)) ..
+calc_K_eq(j)$((ord(j) = NR1) OR (ord(j) = NR2) OR (ord(j) = NR3)) ..
     K_eq(j) =E= EXP(10.387 + 4060.59/T(j) - 2.89055*LOG(T(j))
                 - 0.01915144*T(j) + 5.28586E-5*T(j)**2 - 5.32977E-8*T(j)**3);
 
 * Specific reaction rate
 EQUATION calc_k_rate(j);
-calc_k_rate(j)$((ord(j) >= NR) AND (ord(j) <= NR+2)) ..
+calc_k_rate(j)$((ord(j) = NR1) OR (ord(j) = NR2) OR (ord(j) = NR3)) ..
     k_rate(j) =E= 7.41816E15 * EXP(-60.4E3 / (R * T(j))) / 60;
 
 * Adsorption rate
 EQUATION calc_k_A(j);
-calc_k_A(j)$((ord(j) >= NR) AND (ord(j) <= NR+2)) ..
+calc_k_A(j)$((ord(j) = NR1) OR (ord(j) = NR2) OR (ord(j) = NR3)) ..
     k_A(j) =E= EXP(-1.0707 + 1323.1 / T(j));
 
 * Reaction rate equation
 EQUATION calc_Rx_Rate(j);
-calc_Rx_Rate(j)$((ord(j) >= NR) AND (ord(j) <= NR+2)) ..
+calc_Rx_Rate(j)$((ord(j) = NR1) OR (ord(j) = NR2) OR (ord(j) = NR3)) ..
 *    Rxn_Rate(j)*K_eq(j)*Xg('2',j) =E= k_rate(j)*(Xg('2',j))**2*(Xg('3',j)*K_eq(j)*Xg('2',j) - Xg('4',j))/(1+k_A(j)*Xg('2',j))**3;
     Rxn_Rate(j) =E= k_rate(j)*Xg('2',j) * ( Xg('2',j) * Xg('3',j) - Xg('4',j)/K_eq(j) ) / (1 + k_A(j)*Xg('2',j) )**3;
         
 * Set reaction rate to zero for non-reactive trays
 EQUATION assign_zero(j);
-assign_zero(j)$( ((ord(j) < NR) OR (ord(j) > NR+2)) AND (ord(j) <= Ns) )  ..
+assign_zero(j)$((ord(j) <> NR1) AND (ord(j) <> NR2) AND (ord(j) <> NR3)) ..
    Rxn_Rate(j) =E= 0;
-
 
 
 * ============================================================================ *
@@ -618,7 +637,7 @@ Parameters
 *Spec_2 "Bottom to feed ratio" /0.233/;
  
 Spec_1 "Ethanol conversion" /0.85/
-Spec_2 "ETBE molar fraction on the bottom produtct" /0.83/;
+Spec_2 "ETBE molar fraction on the bottom produtct" /0.8/;
 
 * Total Molar Balance
 mol_balance_eq(j)$((ord(j) GT 1) AND (ord(j) LT Ns)) ..
@@ -681,25 +700,18 @@ energy_balance_condenser_eq ..
 energy_balance_reboiler_eq(j)$(ord(j) EQ Ns) ..
     V(j) * Hv(j) + L(j) * Hl(j) - L(j-1) * Hl(j-1) - Qr =E= 0;
 
-* Specifications
+* Conversion Spec
 spec_1_eq(j)$(ord(j) EQ Ns) .. (FE - D*x['2','1'] - L[j]*x['2',j])/FE =e= 0.85;
-spec_2_eq(j)$(ord(j) EQ Ns) .. 0.83 - x['4', j] =E= 0;
 
+*  Product molar fraction spec
+spec_2_eq(j)$(ord(j) EQ Ns) .. x['4', j] =l= 0.6;
+
+* Reflux ratio restriction
 Equation spec_3_eq;
-spec_3_eq ..  L['1']/D =g= 1.1;
+spec_3_eq ..  L['1']/D =g= 60;
 
 Equation spec_4_eq;
-spec_4_eq ..  L['1']/D =l= 9.5;
-*spec_1_eq(j)$(ord(j) EQ Ns)  .. (FE - D*x['2','1'] - L[j]*x['2',j])/FE  =E= Spec_1;
-*  molar flowarate spec 
-*spec_2_eq(j)$(ord(j) EQ Ns)  .. x['4', j] =G= Spec_2;
-
-* Specifications
-*spec_1_eq .. (FE - D*x['2','1'] - L['10']*x['2','10'])/FE  =g= Spec_1;
-*spec_2_eq .. x['4', '10'] =g= Spec_2;
-
-*spec_1_eq .. D - L['1']/Spec_1 =E= 0;
-*spec_2_eq .. (FE+FB)*Spec_2 - L['10'] =E= 0;
+spec_4_eq ..  L['1']/D =l= 15;
 
 equation V1_eq;
 V1_eq .. V('1') =E= 0;
@@ -875,7 +887,7 @@ energy_balance_eq,
 energy_balance_condenser_eq,
 energy_balance_reboiler_eq,
 spec_1_eq,
-*spec_2_eq,
+spec_2_eq,
 V1_eq,
 def_D_col,
 def_Mw_mix,
@@ -932,6 +944,8 @@ energy_balance_condenser_eq,
 energy_balance_reboiler_eq,
 spec_1_eq,
 *spec_2_eq,
+spec_3_eq,
+*spec_4_eq,
 V1_eq,
 def_D_col,
 def_Mw_mix,
@@ -942,17 +956,9 @@ def_Tcond,
 def_Breb,
 *CAP_eq,
 *OP_eq,
-obj_def,
-spec_3_eq,
-spec_4_eq,
+obj_def
 /;
-
-
-
-SCALAR nsmin, nsmax;
-nsmin = 6;
-nsmax = 30;
-
+   
 * Positive Variables
 L.lo(j) = 1e-5 ;  L.up(j) = 50; L.l(j) = .5;
 V.lo(j) = 1e-5 ;  V.up(j) = 50; V.l(j) = .5;
@@ -966,15 +972,15 @@ Breb.lo = 0.001; Breb.up = 1;
 T.lo(j) = Tmin; T.up(j) = Tmax; T.scale(j) = TF_factor;
 
 logPsat.lo(i,j) = (
-                kk(i,'j1') + kk(i,'j2')/(kk(i,'j3') + Tmin) 
-               + kk(i,'j4')*Tmin + kk(i,"j5")*LOG(Tmin) 
-               + kk(i,'j6')*(Tmin**kk(i,'j7')));
+                kk(i,'1') + kk(i,'2')/(kk(i,'3') + Tmin) 
+               + kk(i,'4')*Tmin + kk(i,"5")*LOG(Tmin) 
+               + kk(i,'6')*(Tmin**kk(i,'7')));
                
 
 logPsat.up(i,j) = (
-                kk(i,'j1') + kk(i,'j2')/(kk(i,'j3') + Tmax) 
-               + kk(i,'j4')*Tmax + kk(i,"j5")*LOG(Tmax) 
-               + kk(i,'j6')*(Tmax**kk(i,'j7')));
+                kk(i,'1') + kk(i,'2')/(kk(i,'3') + Tmax) 
+               + kk(i,'4')*Tmax + kk(i,"5")*LOG(Tmax) 
+               + kk(i,'6')*(Tmax**kk(i,'7')));
 logPsat.scale(i,j) = 10; 
 
 * Apply linear profile
@@ -1086,149 +1092,128 @@ Treb.lo = Tmax-50; Treb.up = Tmax; Treb.scale = TF_factor;
 *FE is a parameter for this case
 *FE.lo = 0.00075; FE.up = 37.43; FE.l = 5.774/F_factor; # FE is a parameter for this case
     
+
+
+* Set solver options once before the loop
+option reslim = 1000;
+option optcr = 1e-8;
+option threads = 12;
+MESHR_Rigorous.scaleopt = 1;
+*Avoiding writing lst
+*option solprint = silent;
+
     
-
-*   
-*        for(NFB = NFE+2 to (Ns - 1) by 1,
-*        
-*            for(NR = NFE to (NFB-2) by 1,
-*            
-
-*                option NLP = CONOPT4;
-*                option threads = 8;
-*                option optca = 1e-8;
-*                option optcr = 1e-8;
-*                SOLVE MESHR_Simple USING NLP MINIMIZING obj;
-*                X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
-*                X_D_ETBE(j)$(ord(j) = Ns)  = x.l['4',j];
-*                RR = L.l('1')/D.l;
-*                DISPLAY X_ETOH, x_D_ETBE, RR, Qr.l;
-
-
-
-
-$macro CONDITION ( (ord(j) <= Ns) AND (ord(jj) EQ Ns)  AND (ord(zz) EQ NFE) AND (ord(xx) EQ NFB) AND (ord(hh) EQ NR) )
-$macro CONDITION_2 ( (ord(j) = Ns) AND (ord(jj) EQ Ns) AND (ord(zz) EQ NFE) AND (ord(xx) EQ NFB) AND (ord(hh) EQ NR) )
-$macro CONDITION_3 ( (ord(j) = 1) AND (ord(jj) EQ Ns) AND (ord(zz) EQ NFE) AND (ord(xx) EQ NFB) AND (ord(hh) EQ NR) )
-                
+*    * Set scalar values from loop indices
 Ns = 9;
 NFE = 3;
 NFB = 7;
-NR = 3;
+NR1 = NFE;
+NR2 = NFE+1;
+NR3 = NFE+2;
+
 
 option NLP = CONOPT;
-option reslim = 1000;
-option optcr = 1e-4;
-*option optca = 1e-4;
-option threads = 12;
-MESHR_Rigorous.scaleopt = 1;
 SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
-display MESHR_Rigorous.resusd;
-display MESHR_Rigorous.resusd, MESHR_Rigorous.etSolve;
-X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
-X_D_ETBE(j)$(ord(j) = Ns)  = x.l['4',j];
-RR = L.l('1')/D.l;
-test_par(j)$(ord(j) EQ Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE - Spec_1;
-DISPLAY Ns, NFE, NFB, NR, Dcol_max.l, X_ETOH, x_D_ETBE, RR, Qr.l, MESHR_Rigorous.modelStat,test_par;
 
-option NLP = BARON;
-option reslim = 1000;
-option optcr = 1e-4;
-*option optca = 1e-4;
-option threads = 12;
-MESHR_Rigorous.scaleopt = 1;
+
+*    Baron
+option NLP = Baron;
 SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
-display MESHR_Rigorous.resusd;
-display MESHR_Rigorous.resusd, MESHR_Rigorous.etSolve;
+
+    
+*    * Calculate derived values
 X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
-X_D_ETBE(j)$(ord(j) = Ns)  = x.l['4',j];
+X_D_ETBE(j)$(ord(j) = Ns) = x.l['4',j];
 RR = L.l('1')/D.l;
-DISPLAY Ns, NFE, NFB, NR, Dcol_max.l, X_ETOH, x_D_ETBE, RR, Qr.l, MESHR_Rigorous.modelStat;
-
-
-*option NLP = CONOPT;
-*option reslim = 1000;
-*option optcr = 1e-4;
-**option optca = 1e-4;
-*option threads = 12;
-**MESHR_Rigorous.scaleopt = 1;
-*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
-
-*option NLP = ANTIGONE;
-*option reslim = 1000;
-*option optcr = 1e-4;
-*option threads = 12;
-*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
-*display MESHR_Rigorous.resusd;
-*display MESHR_Rigorous.resusd, MESHR_Rigorous.etSolve;
-*X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
-*X_D_ETBE(j)$(ord(j) = Ns)  = x.l['4',j];
-*RR = L.l('1')/D.l;
-*test_par(j)$(ord(j) EQ Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE - Spec_1;
-*DISPLAY Ns, NFE, NFB, NR, Dcol_max.l, X_ETOH, x_D_ETBE, RR, Qr.l, MESHR_Rigorous.modelStat,test_par;
-
-*                * Mw_cost
-Mw_mix_temp(j) = sum( i, y.l(i,j)*Mw(i) );
-*                *     If the candidate is viable, save the results
-
+Mw_mix_temp(j) = sum(i, y.l(i,j)*Mw(i));
 Tcond_t = T.l('1');
-model_stat(j,jj,zz,xx,hh)$(CONDITION_2) = MESHR_Rigorous.modelStat;
-if ((MESHR_Rigorous.modelStat = 1) or (MESHR_Rigorous.modelStat = 2),
 
-    Z_cost(j,jj,zz,xx,hh)$(CONDITION)          = Z.l(j);
-    v_mol_cost(j,jj,zz,xx,hh)$(CONDITION)   = v_mol.l(j);
-    Mw_cost(j,jj,zz,xx,hh)$(CONDITION)       = Mw_mix_temp(j);
-    Qr_cost(j,jj,zz,xx,hh)$(CONDITION_2)     = Qr.l*FH_Factor;
-    Qc_cost(j,jj,zz,xx,hh)$(CONDITION_2)     = Qc.l*FH_factor;
-    T_cost(j,jj,zz,xx,hh)$(CONDITION)          = T.l(j);
-    V_cost(j,jj,zz,xx,hh)$(CONDITION)          = V.l(j)*F_factor;
-    L_cost(j,jj,zz,xx,hh)$(CONDITION)          = L.l(j)*F_factor;
-    x_column(i,j,jj,zz,xx,hh)$(CONDITION)    = x.l(i,j);
-    y_column(i,j,jj,zz,xx,hh)$(CONDITION)    = y.l(i,j);
-    Treb_cost(j,jj,zz,xx,hh)$(CONDITION_2)  = T.l(j);
-    Tcond_cost(j,jj,zz,xx,hh)$(CONDITION_2)  = Tcond_t;
-    RR_array(j,jj,zz,xx,hh)$(CONDITION_2)         =  RR;
-    x_ETBE_array(j,jj,zz,xx,hh) $(CONDITION_2) =  X_D_ETBE(j);
-    x_ETBE_D_array(j,jj,zz,xx,hh)$(CONDITION_3) = x.l['4','1'];
-    X_EtOH_array(j,jj,zz,xx,hh) $(CONDITION_2) =  X_ETOH(j);
-    profit_obj(j,jj,zz,xx,hh)$(CONDITION_2)  = obj.l;
-    Breb_cost(j,jj,zz,xx,hh)$(CONDITION_2) = Breb.l*F_Factor;
-    D_colMax_arr(j,jj,zz,xx,hh)$(CONDITION_2) = Dcol_max.l;
-    D_col_arr(j,jj,zz,xx,hh)$(CONDITION)          = D_col.l(j);
-    count_s = count_s+1;
+DISPLAY X_ETOH, X_D_ETBE, RR;
     
-    else
-    
-        Z_cost(j,jj,zz,xx,hh)$(CONDITION)        = -1;
-        v_mol_cost(j,jj,zz,xx,hh)$(CONDITION) = -1;
-        Mw_cost(j,jj,zz,xx,hh)$(CONDITION)     = -1;
-        Qr_cost(j,jj,zz,xx,hh)$(CONDITION_2)   = -1;
-        Qc_cost(j,jj,zz,xx,hh)$(CONDITION_2)   = -1;
-        V_cost(j,jj,zz,xx,hh)$(CONDITION)          = -1;
-        L_cost(j,jj,zz,xx,hh)$(CONDITION)          = -1;
-        T_cost(j,jj,zz,xx,hh)$(CONDITION)          = -1;
-        x_column(i,j,jj,zz,xx,hh)$(CONDITION)    = -1;
-        y_column(i,j,jj,zz,xx,hh)$(CONDITION)    = -1;
-        Treb_cost(j,jj,zz,xx,hh)$(CONDITION_2)  = -1;
-        Tcond_cost(j,jj,zz,xx,hh)$(CONDITION_2)  = -1;
-        RR_array(j,jj,zz,xx,hh)$(CONDITION_2)    =  -1;
-        x_ETBE_array(j,jj,zz,xx,hh) $(CONDITION_2) =  -1;
-        x_ETBE_D_array(j,jj,zz,xx,hh)$(CONDITION_3) = -1;
-        X_EtOH_array(j,jj,zz,xx,hh) $(CONDITION_2) =  -1;
-        profit_obj(j,jj,zz,xx,hh)$(CONDITION_2)  = -1;
-        Breb_cost(j,jj,zz,xx,hh)$(CONDITION_2) = -1;
-        D_colMax_arr(j,jj,zz,xx,hh)$(CONDITION_2) = -1;
-        D_col_arr(j,jj,zz,xx,hh)$(CONDITION)          = -1;
-        count_f = count_f+1;
-);
-*                        it = it+1;
-**                        Save results to a GDX file named differently in each iteration
-*                        execute_unload 'result_iter' + it:0 + '.gdx', result;
-*
-**                        Store result for later
-*                        results(ord(iter)=it) = result;
-*            );
+*    * Store results based on solution status
+*if ((MESHR_Rigorous.modelStat = 1) or (MESHR_Rigorous.modelStat = 2),
+*    
+**     Successful solve - store results for all stages
+*    loop(j$(ord(j) <= Ns),
+*        Z_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = Z.l(j);
+*        v_mol_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = v_mol.l(j);
+*        Mw_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = Mw_mix_temp(j);
+*        T_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = T.l(j);
+*        V_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = V.l(j)*F_factor;
+*        L_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = L.l(j)*F_factor;
+*        D_col_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = D_col.l(j);
+*        
+*        loop(i,
+*            x_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = x.l(i,j);
+*            y_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = y.l(i,j);
 *        );
+*    );
+*    
+**   * Scalar results (one per configuration)
+*    Qr_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = Qr.l*FH_Factor;
+*    Qc_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = Qc.l*FH_factor;
+*    Treb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = sum(j$(ord(j) = Ns), T.l(j));
+*    Tcond_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = Tcond_t;
+*    RR_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = RR;
+*    x_ETBE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = sum(j$(ord(j) = Ns), X_D_ETBE(j));
+*    x_ETBE_D_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = x.l['4','1'];
+*    X_EtOH_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = sum(j$(ord(j) = Ns), X_ETOH(j));
+*    profit_obj(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = obj.l;
+*    Breb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = Breb.l*F_Factor;
+*    D_colMax_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = Dcol_max.l;
+*    FE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = FE.l*F_Factor;
+*    
+*    count_s = count_s + 1;
+*    
+*else
+**    * Failed solve - store -1 as indicator
+*    loop(j$(ord(j) <= Ns),
+*        Z_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        v_mol_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        Mw_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        T_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        V_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        L_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        D_col_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        
+*        loop(i,
+*            x_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*            y_column(i,ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set,j) = -1;
+*        );
+*    );
+*    
+*    Qr_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    Qc_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    Treb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    Tcond_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    RR_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    x_ETBE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    x_ETBE_D_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    X_EtOH_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    profit_obj(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    Breb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    D_colMax_arr(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    FE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    
+*    count_f = count_f + 1;
+*);
+*    
+*    * Optional: Display progress every 10 solves
+
+
+
+* Final summary
+*DISPLAY "Successful solves:", count_s;
+*DISPLAY "Failed solves:", count_f;
+
 
 Elapsed_time = timeElapsed;
 Display   Elapsed_time
+
+** Export all results to GDX file
+*execute_unload "full_exhaustive_results_run_1.gdx" 
+*    Z_cost, v_mol_cost, Mw_cost, T_cost, V_cost, L_cost, D_col_arr,
+*    x_column, y_column, Qr_cost, Qc_cost, Treb_cost, Tcond_cost,
+*    RR_array, x_ETBE_array, x_ETBE_D_array, X_EtOH_array, FE_array, 
+*    profit_obj, Breb_cost, D_colMax_arr,
+*    elapsed_time, count_s, count_f;

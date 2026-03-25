@@ -18,11 +18,11 @@ Thumbs.db
 
 
 #GAMS files and folders
-.dat
-.gsp
+*.dat
+*.gsp
 *.log~*
 *.log
-.lst
-.lxi
-.ref
+*.lst
+*.lxi
+*.ref
 2*/
