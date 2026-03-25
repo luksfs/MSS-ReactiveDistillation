@@ -704,14 +704,15 @@ energy_balance_reboiler_eq(j)$(ord(j) EQ Ns) ..
 spec_1_eq(j)$(ord(j) EQ Ns) .. (FE - D*x['2','1'] - L[j]*x['2',j])/FE =e= 0.85;
 
 *  Product molar fraction spec
-spec_2_eq(j)$(ord(j) EQ Ns) .. x['4', j] =l= 0.6;
+spec_2_eq(j)$(ord(j) EQ Ns) .. x['4', j] =e= Spec_2;
 
 * Reflux ratio restriction
+Parameters spec_3 "Reflux Ratio" /3/;
 Equation spec_3_eq;
-spec_3_eq ..  L['1']/D =g= 60;
+spec_3_eq ..  L['1']/D =g=10.7;
 
 Equation spec_4_eq;
-spec_4_eq ..  L['1']/D =l= 15;
+spec_4_eq ..  L['1']/D =l= 9;
 
 equation V1_eq;
 V1_eq .. V('1') =E= 0;
@@ -943,7 +944,7 @@ energy_balance_eq,
 energy_balance_condenser_eq,
 energy_balance_reboiler_eq,
 spec_1_eq,
-*spec_2_eq,
+spec_2_eq,
 spec_3_eq,
 *spec_4_eq,
 V1_eq,
@@ -1096,7 +1097,7 @@ Treb.lo = Tmax-50; Treb.up = Tmax; Treb.scale = TF_factor;
 
 * Set solver options once before the loop
 option reslim = 1000;
-option optcr = 1e-8;
+option optcr = 1e-4;
 option threads = 12;
 MESHR_Rigorous.scaleopt = 1;
 *Avoiding writing lst
@@ -1112,15 +1113,54 @@ NR2 = NFE+1;
 NR3 = NFE+2;
 
 
+*spec_3 = 4.2;
+Spec_2 = 0.76
 option NLP = CONOPT;
 SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
-
-
-*    Baron
 option NLP = Baron;
 SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
 
-    
+*    * Calculate derived values
+X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
+X_D_ETBE(j)$(ord(j) = Ns) = x.l['4',j];
+RR = L.l('1')/D.l;
+Mw_mix_temp(j) = sum(i, y.l(i,j)*Mw(i));
+Tcond_t = T.l('1');
+
+DISPLAY X_ETOH, X_D_ETBE, RR;
+
+*spec_3 = 4.3;
+Spec_2 = 0.77
+option NLP = CONOPT;
+SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+option NLP = Baron;
+SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+option NLP = CONOPT;
+SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+
+*    * Calculate derived values
+X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
+X_D_ETBE(j)$(ord(j) = Ns) = x.l['4',j];
+RR = L.l('1')/D.l;
+Mw_mix_temp(j) = sum(i, y.l(i,j)*Mw(i));
+Tcond_t = T.l('1');
+
+DISPLAY X_ETOH, X_D_ETBE, RR;
+
+*Spec_2 = 0.79
+*option NLP = CONOPT;
+*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+*option NLP = Baron;
+*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+*
+*spec_3 = 4.4;
+*option NLP = CONOPT;
+*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+*
+**    Baron
+*option NLP = Baron;
+*SOLVE MESHR_Rigorous USING NLP MINIMIZING obj;
+
 *    * Calculate derived values
 X_ETOH(j)$(ord(j) = Ns) = (FE - D.l*x.l['2','1'] - L.l[j]*x.l['2',j])/FE;
 X_D_ETBE(j)$(ord(j) = Ns) = x.l['4',j];
@@ -1185,7 +1225,7 @@ DISPLAY X_ETOH, X_D_ETBE, RR;
 *    Qr_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
 *    Qc_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
 *    Treb_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
-*    Tcond_cost(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
+*    Tcond_cost(ns_set,nfe_set,nfb_set,nr1_set--,nr2_set,nr3_set) = -1;
 *    RR_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
 *    x_ETBE_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;
 *    x_ETBE_D_array(ns_set,nfe_set,nfb_set,nr1_set,nr2_set,nr3_set) = -1;

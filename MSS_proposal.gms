@@ -686,10 +686,10 @@ spec_1_eq(j)$(ord(j) EQ Ns) .. (FE - D*x['2','1'] - L[j]*x['2',j])/FE =e= 0.85;
 spec_2_eq(j)$(ord(j) EQ Ns) .. 0.83 - x['4', j] =E= 0;
 
 Equation spec_3_eq;
-spec_3_eq ..  L['1']/D =g= 1.1;
+spec_3_eq ..  L['1']/D =g= 9;
 
 Equation spec_4_eq;
-spec_4_eq ..  L['1']/D =l= 9.5;
+spec_4_eq ..  L['1']/D =l= 15;
 *spec_1_eq(j)$(ord(j) EQ Ns)  .. (FE - D*x['2','1'] - L[j]*x['2',j])/FE  =E= Spec_1;
 *  molar flowarate spec 
 *spec_2_eq(j)$(ord(j) EQ Ns)  .. x['4', j] =G= Spec_2;
@@ -931,7 +931,7 @@ energy_balance_eq,
 energy_balance_condenser_eq,
 energy_balance_reboiler_eq,
 spec_1_eq,
-*spec_2_eq,
+spec_2_eq,
 V1_eq,
 def_D_col,
 def_Mw_mix,
@@ -944,7 +944,7 @@ def_Breb,
 *OP_eq,
 obj_def,
 spec_3_eq,
-spec_4_eq,
+*spec_4_eq,
 /;
 
 
